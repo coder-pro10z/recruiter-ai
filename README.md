@@ -77,3 +77,65 @@ JOBFINDER/
 - `dependency-map.md` — module dependency graph
 - `implementation-status.md` — live build status
 - `logs.md` — execution log
+
+---
+
+## Build Summary — Phases 0–5 Complete
+
+### Phase 0 — Documentation
+
+| File | Purpose |
+|------|---------|
+| `rules.md` | Execution rules for all agents |
+| `README.md` | Setup guide + architecture |
+| `workflow.md` | Phase-by-phase execution plan |
+| `dependency-map.md` | Module + package dependency graph |
+| `implementation-status.md` | Live build tracker |
+| `logs.md` | Execution audit trail |
+| `.env.example` | All 18 required environment variables |
+
+### Phase 1–4 — Backend (Python FastAPI)
+
+- `config/settings.py` — Pydantic BaseSettings for all env vars
+- `db/session.py` — Async SQLAlchemy engine + session factory
+- `models/` — 4 ORM models: Job, Application, Recruiter, OutreachMessage
+- **12 Agent Modules:**
+
+| Agent | Capability |
+|-------|-----------|
+| `job_detector` | RSS feed polling for new job postings |
+| `jd_parser` | Extracts skills, level, salary from job descriptions |
+| `rule_engine` | Configurable scoring against your skill profile |
+| `resume_matcher` | Maps resume sections to JD requirements |
+| `recruiter_scraper` | Finds hiring managers via Apollo + Hunter APIs |
+| `outreach_generator` | Personalized emails via Claude Haiku or templates |
+| `telegram_agent` | Sends strike packages with one-click action links |
+| `notion_tracker` | Syncs application state to Notion database |
+| `apply_engine` | Sends application emails via Gmail API |
+| `mailtrack_monitor` | Detects email opens and link clicks |
+| `followup_engine` | Schedules follow-ups at 3 / 7 / 14 days |
+| `analytics_engine` | Funnel metrics, open rates, response rates |
+
+- 6 API route files under `/api/v1/` — all responses use `{ success, data, error }` envelope
+- `scheduler/tasks.py` — APScheduler background tasks (job detection, follow-ups, Mailtrack checks)
+- `main.py` — FastAPI app with CORS middleware + lifespan startup
+
+### Phase 5 — Frontend (Next.js 14)
+
+- `lib/types.ts` + `lib/api.ts` — fully typed API client
+- 5 pages:
+
+| Page | Features |
+|------|---------|
+| Dashboard | Funnel stats, matched jobs, open/response rates, detect + follow-up buttons |
+| Jobs | Search, match filter, inline recruiter scraping + outreach generation |
+| Applications | Status Kanban, timeline view, one-click status updates |
+| Analytics | Visual funnel bars, top matched companies, conversion metrics |
+| Settings | Skill tag editors, blocked company/keyword lists, RSS feed manager |
+
+### Phases 6–7 — Remaining
+
+- [ ] Unit tests + API integration tests
+- [ ] Docker Compose for local dev
+- [ ] Rate limiting middleware
+- [ ] CI/CD pipeline
