@@ -95,4 +95,7 @@ export const settingsApi = {
   updateRules: (rules: Partial<MatchingRules>) => patch<MatchingRules>("/settings/rules", rules),
   getFeeds: () => get<{ feeds: string[] }>("/settings/feeds"),
   updateFeeds: (feeds: string[]) => put<{ feeds: string[] }>("/settings/feeds", { feeds }),
+  getProfiles: () => get<Array<{id: string, name: string, is_active: boolean}>>("/settings/profiles"),
+  createProfile: (profile: any) => post<{id: string, name: string}>("/settings/profiles", profile),
+  activateProfile: (id: string) => put<{active_profile_id: string}>(`/settings/profiles/${id}/activate`),
 };

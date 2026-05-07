@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useQuery, useMutation } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { settingsApi } from "@/lib/api";
 import type { MatchingRules } from "@/lib/types";
 import { Save, Plus, X } from "lucide-react";
@@ -51,19 +51,45 @@ function TagEditor({
 }
 
 export default function SettingsPage() {
+  const queryClient = useQueryClient();
+  const { data: profiles } = useQuery({ queryKey: ["profiles"], queryFn: settingsApi.getProfiles });
   const { data: rules } = useQuery({ queryKey: ["rules"], queryFn: settingsApi.getRules });
   const { data: feedsData } = useQuery({ queryKey: ["feeds"], queryFn: settingsApi.getFeeds });
 
   const [draft, setDraft] = useState<Partial<MatchingRules>>({});
   const [feeds, setFeeds] = useState<string[]>([]);
   const [feedInput, setFeedInput] = useState("");
+  const [profileName, setProfileName] = useState("");
 
   useEffect(() => { if (rules) setDraft(rules); }, [rules]);
   useEffect(() => { if (feedsData) setFeeds(feedsData.feeds); }, [feedsData]);
 
   const saveRules = useMutation({
     mutationFn: () => settingsApi.updateRules(draft),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["rules"] })
   });
+  
+  const createProfile = useMutation({
+    mutationFn: () => settingsApi.createProfile({
+      name: profileName || "Custom Profile",
+      ...draft,
+      is_active: true
+    }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["profiles"] });
+      queryClient.invalidateQueries({ queryKey: ["rules"] });
+      setProfileName("");
+    }
+  });
+
+  const activateProfile = useMutation({
+    mutationFn: (id: string) => settingsApi.activateProfile(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["profiles"] });
+      queryClient.invalidateQueries({ queryKey: ["rules"] });
+    }
+  });
+
   const saveFeeds = useMutation({
     mutationFn: () => settingsApi.updateFeeds(feeds),
   });
@@ -72,12 +98,31 @@ export default function SettingsPage() {
     setDraft((d) => ({ ...d, [key]: val }));
 
   return (
-    <div className="space-y-6 max-w-2xl">
+    <div className="space-y-6 max-w-2xl pb-20">
       <h1 className="text-2xl font-bold text-white">Settings</h1>
+
+      {/* Profile Selector */}
+      <div className="bg-gray-900 border border-gray-800 rounded-xl p-5 space-y-4">
+        <h2 className="text-sm font-semibold text-gray-300">Active Search Profile</h2>
+        <div className="flex gap-4">
+          <select 
+            className="flex-1 bg-gray-800 border border-gray-700 rounded text-sm text-gray-200 px-3 py-2 focus:outline-none focus:border-brand-500"
+            value={profiles?.find(p => p.is_active)?.id || ""}
+            onChange={(e) => {
+              if (e.target.value) activateProfile.mutate(e.target.value);
+            }}
+          >
+            <option value="" disabled>Select a profile...</option>
+            {profiles?.map(p => (
+              <option key={p.id} value={p.id}>{p.name}</option>
+            ))}
+          </select>
+        </div>
+      </div>
 
       {/* Matching Rules */}
       <div className="bg-gray-900 border border-gray-800 rounded-xl p-5 space-y-5">
-        <h2 className="text-sm font-semibold text-gray-300">Matching Rules</h2>
+        <h2 className="text-sm font-semibold text-gray-300">Matching Rules Configuration</h2>
 
         <TagEditor
           label="Required Skills (I have)"
@@ -113,19 +158,37 @@ export default function SettingsPage() {
           />
         </div>
 
-        <button
-          onClick={() => saveRules.mutate()}
-          disabled={saveRules.isPending}
-          className="flex items-center gap-2 px-4 py-2 bg-brand-600 hover:bg-brand-700 text-white text-sm font-medium rounded-lg disabled:opacity-50"
-        >
-          <Save size={14} />
-          {saveRules.isPending ? "Saving..." : saveRules.isSuccess ? "Saved!" : "Save Rules"}
-        </button>
+        <div className="flex flex-col gap-3 pt-4 border-t border-gray-800">
+          <button
+            onClick={() => saveRules.mutate()}
+            disabled={saveRules.isPending}
+            className="flex items-center justify-center gap-2 w-full py-2 bg-brand-600 hover:bg-brand-700 text-white text-sm font-medium rounded-lg disabled:opacity-50 transition-colors"
+          >
+            <Save size={14} />
+            {saveRules.isPending ? "Saving..." : saveRules.isSuccess ? "Updated!" : "Update Current Profile"}
+          </button>
+          
+          <div className="flex items-center gap-2">
+             <input 
+               className="flex-1 px-3 py-2 bg-gray-800 border border-gray-700 rounded text-sm text-gray-200 focus:outline-none focus:border-brand-500"
+               placeholder="New Profile Name (e.g. Senior .NET)"
+               value={profileName}
+               onChange={(e) => setProfileName(e.target.value)}
+             />
+             <button
+               onClick={() => createProfile.mutate()}
+               disabled={createProfile.isPending || !profileName.trim()}
+               className="px-4 py-2 bg-gray-700 hover:bg-gray-600 text-white text-sm font-medium rounded-lg disabled:opacity-50 transition-colors whitespace-nowrap"
+             >
+                Save as New Profile
+             </button>
+          </div>
+        </div>
       </div>
 
       {/* RSS Feeds */}
       <div className="bg-gray-900 border border-gray-800 rounded-xl p-5 space-y-4">
-        <h2 className="text-sm font-semibold text-gray-300">RSS Feeds</h2>
+        <h2 className="text-sm font-semibold text-gray-300">Active RSS Feeds</h2>
         <div className="space-y-2">
           {feeds.map((f, i) => (
             <div key={i} className="flex items-center gap-2">
