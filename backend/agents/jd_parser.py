@@ -48,13 +48,15 @@ class ParsedJD:
 
 
 class JDParser:
-    def parse(self, description: str) -> ParsedJD:
+    def parse(self, description: str, extra_skills: list[str] | None = None) -> ParsedJD:
         if not description:
             return ParsedJD()
 
         text = description.lower()
-        required_skills = self._extract_skills(self._extract_required_section(text))
-        preferred_skills = self._extract_skills(self._extract_preferred_section(text))
+        all_skills = list(set(SKILL_KEYWORDS + [s.lower() for s in (extra_skills or [])]))
+        
+        required_skills = self._extract_skills(self._extract_required_section(text), all_skills)
+        preferred_skills = self._extract_skills(self._extract_preferred_section(text), all_skills)
         preferred_skills = [s for s in preferred_skills if s not in required_skills]
 
         return ParsedJD(
@@ -88,10 +90,14 @@ class JDParser:
                 return m.group(1)
         return ""
 
-    def _extract_skills(self, text: str) -> list[str]:
+    def _extract_skills(self, text: str, skill_list: list[str]) -> list[str]:
         found = []
-        for skill in SKILL_KEYWORDS:
-            if re.search(r"\b" + re.escape(skill) + r"\b", text, re.IGNORECASE):
+        for skill in skill_list:
+            # Escape regex characters except for . and # which are common in C#, .NET
+            safe_skill = re.escape(skill)
+            # Use negative lookbehind and lookahead to avoid partial word matches
+            # but handle special characters like C# and .NET
+            if re.search(r"(?<![a-zA-Z0-9])" + safe_skill + r"(?![a-zA-Z0-9])", text, re.IGNORECASE):
                 found.append(skill)
         return found
 

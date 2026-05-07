@@ -81,8 +81,15 @@ async def trigger_detection(db: DBDep):
     dynamic_rule_engine = RuleEngine(rules=active_rules)
     
     jobs = await detector.run()
+    
+    # Extract dynamic skills to look for
+    dynamic_skills = []
+    if active_rules:
+        dynamic_skills.extend(active_rules.get("required_skills", []))
+        dynamic_skills.extend(active_rules.get("preferred_skills", []))
+        
     for job in jobs:
-        parsed = jd_parser.parse(job.description or "")
+        parsed = jd_parser.parse(job.description or "", extra_skills=dynamic_skills)
         result = dynamic_rule_engine.evaluate(
             title=job.title,
             company=job.company,

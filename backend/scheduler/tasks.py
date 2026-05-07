@@ -41,8 +41,14 @@ async def run_job_detection() -> None:
         parser = JDParser()
         engine = RuleEngine(rules=active_rules)
         jobs = await detector.run()
+        
+        dynamic_skills = []
+        if active_rules:
+            dynamic_skills.extend(active_rules.get("required_skills", []))
+            dynamic_skills.extend(active_rules.get("preferred_skills", []))
+
         for job in jobs:
-            parsed = parser.parse(job.description or "")
+            parsed = parser.parse(job.description or "", extra_skills=dynamic_skills)
             result = engine.evaluate(
                 title=job.title,
                 company=job.company,
