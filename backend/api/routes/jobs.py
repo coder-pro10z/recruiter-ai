@@ -30,7 +30,7 @@ class JobResponse(BaseModel):
     model_config = {"from_attributes": True}
 
 
-@router.get("/", response_model=dict[str, Any])
+@router.get("", response_model=dict[str, Any])
 async def list_jobs(
     db: DBDep,
     is_match: bool | None = Query(None),
