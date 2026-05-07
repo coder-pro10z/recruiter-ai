@@ -42,7 +42,11 @@ class JobDetector:
         return detected
 
     async def _parse_feed(self, url: str) -> list[dict[str, Any]]:
-        async with httpx.AsyncClient(timeout=15) as client:
+        headers = {
+            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+            "Accept": "application/rss+xml, application/xml, text/xml, */*",
+        }
+        async with httpx.AsyncClient(timeout=15, headers=headers, follow_redirects=True) as client:
             response = await client.get(url)
             response.raise_for_status()
         feed = feedparser.parse(response.text)
