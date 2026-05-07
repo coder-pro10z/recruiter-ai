@@ -55,12 +55,30 @@ async def get_job(job_id: str, db: DBDep):
 
 @router.post("/detect", response_model=dict[str, Any])
 async def trigger_detection(db: DBDep):
-    from agents.job_detector import JobDetector
+    from agents.job_detector import JobDetector, DEFAULT_RSS_FEEDS
     from agents.rule_engine import RuleEngine
-    from api.routes.settings import _runtime_feeds, _runtime_rules
+    from models.settings import SearchProfile, RssFeed
+    from sqlalchemy import select
     
-    detector = JobDetector(db, rss_feeds=_runtime_feeds)
-    dynamic_rule_engine = RuleEngine(rules=_runtime_rules)
+    feeds_res = await db.execute(select(RssFeed).where(RssFeed.is_active == True))
+    active_feeds = [f.url for f in feeds_res.scalars().all()] or DEFAULT_RSS_FEEDS
+
+    profile_res = await db.execute(select(SearchProfile).where(SearchProfile.is_active == True))
+    profile = profile_res.scalars().first()
+    active_rules = None
+    if profile:
+        active_rules = {
+            "required_skills": profile.required_skills,
+            "preferred_skills": profile.preferred_skills,
+            "blocked_companies": profile.blocked_companies,
+            "blocked_keywords": profile.blocked_keywords,
+            "min_match_score": profile.min_match_score,
+            "target_levels": profile.target_levels,
+            "target_employment": profile.target_employment,
+        }
+    
+    detector = JobDetector(db, rss_feeds=active_feeds)
+    dynamic_rule_engine = RuleEngine(rules=active_rules)
     
     jobs = await detector.run()
     for job in jobs:
