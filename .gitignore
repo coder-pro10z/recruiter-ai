@@ -38,3 +38,5 @@ Thumbs.db
 
 # Logs
 *.log
+.env copy 2.example
+.env copy.example

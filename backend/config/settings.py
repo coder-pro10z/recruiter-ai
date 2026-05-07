@@ -1,9 +1,15 @@
 from pydantic_settings import BaseSettings, SettingsConfigDict
 from functools import lru_cache
+from pathlib import Path
+
+# Resolve .env — works whether uvicorn is run from backend/ or the project root
+_HERE = Path(__file__).resolve().parent.parent  # backend/
+_ROOT = _HERE.parent                             # project root
+_ENV_FILE = str(_HERE / ".env") if (_HERE / ".env").exists() else str(_ROOT / ".env")
 
 
 class Settings(BaseSettings):
-    model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8", extra="ignore")
+    model_config = SettingsConfigDict(env_file=_ENV_FILE, env_file_encoding="utf-8", extra="ignore")
 
     # Database
     database_url: str = "postgresql+asyncpg://localhost/jobfinder"

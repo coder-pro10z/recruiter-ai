@@ -26,15 +26,30 @@ Production-grade multi-agent platform that automates the complete job-hunting wo
 - **Database**: Supabase (PostgreSQL) via SQLAlchemy ORM
 - **Integrations**: Telegram · Apollo · Hunter · Gmail · Mailtrack · Notion · LinkedIn
 
-## Quick Start
+### Quick Start
 
 ### Prerequisites
 - Python 3.11+
 - Node.js 20+
+- Docker & Docker Compose (Optional for containerized dev)
 - Supabase project
 - API keys for all integrations (see .env.example)
 
-### Backend
+### Using Docker Compose (Recommended)
+You can start both the frontend and backend using Docker Compose:
+```bash
+# First, setup your environment variables
+cp .env.example .env
+cd frontend
+cp .env.local.example .env.local
+cd ..
+
+# Build and start the containers
+docker-compose up --build
+```
+The backend will be available at http://localhost:8000 and the frontend at http://localhost:3000.
+
+### Manual Setup (Backend)
 ```bash
 cd backend
 python -m venv venv
@@ -44,7 +59,7 @@ cp ../.env.example .env      # fill in your keys
 uvicorn main:app --reload --port 8000
 ```
 
-### Frontend
+### Manual Setup (Frontend)
 ```bash
 cd frontend
 npm install
@@ -136,6 +151,6 @@ JOBFINDER/
 ### Phases 6–7 — Remaining
 
 - [ ] Unit tests + API integration tests
-- [ ] Docker Compose for local dev
+- [x] Docker Compose for local dev
 - [ ] Rate limiting middleware
-- [ ] CI/CD pipeline
+- [x] CI/CD pipeline

@@ -1,3 +1,5 @@
+import sys
+import asyncio
 from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
@@ -5,6 +7,10 @@ from config.settings import get_settings
 from db.session import init_db
 from scheduler.tasks import create_scheduler
 from api.routes import jobs, applications, recruiters, outreach, analytics, settings as settings_router
+
+# Fix asyncio DNS resolution on Windows (getaddrinfo fails with IocpProactor)
+if sys.platform == "win32":
+    asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
 
 settings = get_settings()
 scheduler = create_scheduler()
