@@ -56,11 +56,16 @@ async def get_job(job_id: str, db: DBDep):
 @router.post("/detect", response_model=dict[str, Any])
 async def trigger_detection(db: DBDep):
     from agents.job_detector import JobDetector
-    detector = JobDetector(db)
+    from agents.rule_engine import RuleEngine
+    from api.routes.settings import _runtime_feeds, _runtime_rules
+    
+    detector = JobDetector(db, rss_feeds=_runtime_feeds)
+    dynamic_rule_engine = RuleEngine(rules=_runtime_rules)
+    
     jobs = await detector.run()
     for job in jobs:
         parsed = jd_parser.parse(job.description or "")
-        result = rule_engine.evaluate(
+        result = dynamic_rule_engine.evaluate(
             title=job.title,
             company=job.company,
             description=job.description or "",

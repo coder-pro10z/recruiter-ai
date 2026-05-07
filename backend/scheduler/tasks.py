@@ -17,9 +17,11 @@ async def run_job_detection() -> None:
         from agents.job_detector import JobDetector
         from agents.jd_parser import JDParser
         from agents.rule_engine import RuleEngine
-        detector = JobDetector(db)
+        from api.routes.settings import _runtime_feeds, _runtime_rules
+        
+        detector = JobDetector(db, rss_feeds=_runtime_feeds)
         parser = JDParser()
-        engine = RuleEngine()
+        engine = RuleEngine(rules=_runtime_rules)
         jobs = await detector.run()
         for job in jobs:
             parsed = parser.parse(job.description or "")
