@@ -17,8 +17,18 @@ function TagEditor({
 }) {
   const [input, setInput] = useState("");
   const add = () => {
-    const v = input.trim().toLowerCase();
-    if (v && !tags.includes(v)) onChange([...tags, v]);
+    const values = input
+      .split(/[\n,]+/) // Split by comma or newline
+      .map(v => v.trim().toLowerCase())
+      .filter(v => v.length > 0);
+
+    if (values.length > 0) {
+      const newTags = [...tags];
+      values.forEach(v => {
+        if (!newTags.includes(v)) newTags.push(v);
+      });
+      onChange(newTags);
+    }
     setInput("");
   };
   return (
