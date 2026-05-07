@@ -51,6 +51,24 @@ function TagEditor({
           value={input}
           onChange={(e) => setInput(e.target.value)}
           onKeyDown={(e) => e.key === "Enter" && add()}
+          onPaste={(e) => {
+            const pastedText = e.clipboardData.getData("text");
+            if (pastedText.includes(",") || pastedText.includes("\n")) {
+              e.preventDefault();
+              const values = pastedText
+                .split(/[\n,]+/)
+                .map(v => v.trim().toLowerCase())
+                .filter(v => v.length > 0);
+              
+              if (values.length > 0) {
+                const newTags = [...tags];
+                values.forEach(v => {
+                  if (!newTags.includes(v)) newTags.push(v);
+                });
+                onChange(newTags);
+              }
+            }
+          }}
         />
         <button onClick={add} className="p-1.5 bg-gray-700 hover:bg-gray-600 rounded text-gray-300">
           <Plus size={12} />
@@ -222,6 +240,26 @@ export default function SettingsPage() {
               if (e.key === "Enter" && feedInput.trim()) {
                 setFeeds([...feeds, feedInput.trim()]);
                 setFeedInput("");
+              }
+            }}
+            onPaste={(e) => {
+              const pastedText = e.clipboardData.getData("text");
+              if (pastedText.includes("\n") || pastedText.includes(",") || pastedText.includes(" ")) {
+                e.preventDefault();
+                const newUrls = pastedText
+                  .split(/[\n, ]+/)
+                  .map(u => u.trim())
+                  .filter(u => u.startsWith("http"));
+                
+                if (newUrls.length > 0) {
+                  setFeeds(prev => {
+                    const combined = [...prev];
+                    newUrls.forEach(url => {
+                      if (!combined.includes(url)) combined.push(url);
+                    });
+                    return combined;
+                  });
+                }
               }
             }}
           />
