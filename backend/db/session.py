@@ -22,6 +22,10 @@ def _build_engine():
     settings = get_settings()
     # Strip any query params; asyncpg SSL config is passed via connect_args
     url = settings.database_url.split("?")[0]
+    if url.startswith("postgres://"):
+        url = url.replace("postgres://", "postgresql+asyncpg://", 1)
+    elif url.startswith("postgresql://"):
+        url = url.replace("postgresql://", "postgresql+asyncpg://", 1)
 
     # Supabase PgBouncer (transaction pooler) uses a self-signed certificate.
     # We still encrypt the connection but skip certificate chain verification.
